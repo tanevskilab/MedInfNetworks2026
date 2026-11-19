@@ -20,6 +20,22 @@ Package versions are selected automatically for the R version provided by Colab.
 Run the following cell once when starting a new Google Colab runtime. Package installation may take several minutes. You do not need to run it again during the same session. When working locally, the cell only installs packages that are not already available.
 
 ```{r}
+# Request Posit's precompiled packages on Ubuntu (including Colab).
+if (file.exists("/etc/os-release") && any(grepl('^ID="?ubuntu"?$', readLines("/etc/os-release")))) {
+  ubuntu_codename <- system("lsb_release -cs", intern = TRUE)
+  host <- paste0("https://", "packagemanager", ".", "posit", ".", "co")
+  p3m_cran <- paste(host, "cran", "__linux__", ubuntu_codename, "latest", sep = "/")
+  p3m_bioc <- paste(host, "bioconductor", "__linux__", ubuntu_codename, "latest", sep = "/")
+  options(
+    HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(),
+      paste(getRversion(), R.version$platform, R.version$arch, R.version$os)),
+    repos = c(CRAN = p3m_cran),
+    BioC_mirror = p3m_bioc
+  )
+} else {
+  options(repos = c(CRAN = "https://cloud.r-project.org"))
+}
+
 cran_packages <- c(
   "BiocManager",
   "tidyverse",
@@ -33,7 +49,7 @@ missing_cran <- cran_packages[
 ]
 
 if (length(missing_cran) > 0) {
-  install.packages(missing_cran, repos = "https://cloud.r-project.org")
+  install.packages(missing_cran)
 }
 
 bioc_packages <- c(
@@ -115,14 +131,14 @@ display_table <- function(data, caption = NULL) {
 When this notebook runs in Colab, opening it from GitHub downloads only the notebook itself. The following cell clones the complete repository, including the prepared `.rds` datasets, and selects it as the working directory. When working locally, your existing working directory is left unchanged.
 
 ```{r}
-repo_dir <- "/content/MedInfNetworks2025"
+repo_dir <- "/content/MedInfNetworks2026"
 
 if (dir.exists("/content") && !dir.exists(repo_dir)) {
   system2(
     "git",
     c(
       "clone",
-      "https://github.com/tanevskilab/MedInfNetworks2025.git",
+      "https://github.com/tanevskilab/MedInfNetworks2026.git",
       repo_dir
     )
   )

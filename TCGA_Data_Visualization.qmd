@@ -11,13 +11,21 @@ format:
     sidebar: floating
 ---
 
+## Make Your Own Copy
+
+In Colab, sign in to your Google account and choose **File → Save a copy in Drive**. Open the saved copy from Google Drive. You can edit cells, try your own code, and save your work there.
+
 ## Loading the BRCA Dataset for Visualization
 
 In this notebook, we will explore and visualize RNA-seq data from TCGA-BRCA that we previously downloaded and prepared. Before creating plots, we need to load the required R packages and the prepared dataset.
 
-Package versions are selected automatically for the R version provided by Colab. If `OmnipathR` cannot be installed, please ask for help rather than changing the Colab R version manually.
+### Installation of Packages
 
-Run the following cell once when starting a new Google Colab runtime. Package installation may take several minutes. You do not need to run it again during the same session. When working locally, the cell only installs packages that are not already available.
+For a CRAN package, `install.packages("package_name")` is usually all you need. This notebook also uses Bioconductor packages, which it installs with `BiocManager::install()`.
+
+Colab runs R on Ubuntu Linux. The setup cell detects the Ubuntu release and uses Posit Package Manager to request matching precompiled packages when available. This speeds up setup by avoiding compilation for those packages. On other systems, the cell uses the standard CRAN and Bioconductor repositories.
+
+Run the setup cell at the start of each new Colab runtime. It checks which packages are already available and installs only the missing ones. The next cell loads the packages for use in the notebook.
 
 ```{r}
 # Request Posit's precompiled packages on Ubuntu (including Colab).

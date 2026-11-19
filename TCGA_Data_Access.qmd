@@ -13,11 +13,17 @@ format:
 
 In this session, we will learn how to use the R programming language to access data from TCGA (The Cancer Genome Atlas).
 
+## Make Your Own Copy
+
+In Colab, sign in to your Google account and choose **File → Save a copy in Drive**. Open the saved copy from Google Drive. You can edit cells, try your own code, and save your work there.
+
 ## Installation of Packages
 
-To begin working with TCGA data in R, we need to install several packages. Some packages come from CRAN (the main R repository) and can be installed with `install.packages`, while others (especially bioinformatics tools) come from Bioconductor.
+For a CRAN package, `install.packages("package_name")` is usually all you need. This notebook also uses Bioconductor packages, which it installs with `BiocManager::install()`.
 
-Run the following cell once when starting a new Google Colab runtime. Package installation may take several minutes. You do not need to run it again during the same session. When working locally, the cell only installs packages that are not already available.
+Colab runs R on Ubuntu Linux. The setup cell detects the Ubuntu release and uses Posit Package Manager to request matching precompiled packages when available. This speeds up setup by avoiding compilation for those packages. On other systems, the cell uses the standard CRAN and Bioconductor repositories.
+
+Run the setup cell at the start of each new Colab runtime. It checks which packages are already available and installs only the missing ones. The next cell loads the packages for use in the notebook.
 
 ```{r}
 # Request Posit's precompiled packages on Ubuntu (including Colab).
@@ -202,19 +208,7 @@ brca_samples <- GDCquery(
 
 # Extract sample metadata
 sample_info <- getResults(brca_samples)
-display_table(
-  sample_info %>%
-    select(
-      cases.submitter_id,
-      sample.submitter_id,
-      sample_type,
-      data_type,
-      analysis_workflow_type,
-      file_name
-    ) %>%
-    head(),
-  caption = "Sample Metadata"
-)
+display_table(head(sample_info, 10), caption = "Sample Metadata (first 10 rows)")
 ```
 
 The resulting metadata includes useful information, such as:
@@ -232,28 +226,10 @@ This metadata tells us what files exist, but it does not include some important 
 ```{r}
 brca_clin <- GDCquery_clinic(project = "TCGA-BRCA", type = "clinical")
 
-# Current GDC releases use sex_at_birth. Older releases used gender.
-sex_field <- intersect(c("sex_at_birth", "gender"), names(brca_clin))[1]
-id_field <- intersect(c("bcr_patient_barcode", "submitter_id"), names(brca_clin))[1]
-if (is.na(sex_field) || is.na(id_field)) {
-  stop("Missing clinical demographic or patient ID field. Inspect names(brca_clin).")
-}
-brca_clin$reported_sex <- tolower(trimws(brca_clin[[sex_field]]))
-brca_clin$patient_id <- brca_clin[[id_field]]
+brca_clin$reported_sex <- tolower(trimws(brca_clin$sex_at_birth))
+brca_clin$patient_id <- brca_clin$submitter_id
 
-display_table(
-  brca_clin %>%
-    select(any_of(c(
-      "patient_id",
-      "reported_sex",
-      "age_at_diagnosis",
-      "primary_diagnosis",
-      "ajcc_pathologic_stage",
-      "vital_status"
-    ))) %>%
-    head(),
-  caption = "Clinical Data"
-)
+display_table(head(brca_clin, 10), caption = "Clinical Data (first 10 rows)")
 ```
 
 The clinical table typically includes:
@@ -303,13 +279,13 @@ These are equivalent patient identifiers.
 
 ```{r}
 sample_info <- sample_info %>%
-  left_join(
+  inner_join(
     brca_clin %>% select(patient_id, reported_sex),
     by = c("cases.submitter_id" = "patient_id")
   )
 ```
 
-Now each sample is associated with a patient’s reported sex.
+The inner join keeps samples whose patient ID matches a clinical record with a reported sex.
 
 After merging, we check how many samples belong to each reported sex:
 
@@ -323,7 +299,7 @@ Why are the numbers now different? Before you continue, try to think about why t
 
 <details>
 
-<summary>Show Code</summary>
+<summary>Show answer</summary>
 
 This does not mean TCGA suddenly contains more patients, instead it means some patients contributed multiple samples, each counted separately. To verify this, we identify patients that appear more than once:
 
